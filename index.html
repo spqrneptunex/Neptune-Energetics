@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neptune — Process Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f6f8;
+    --card:#ffffff;
+    --ink:#0e1b26;
+    --muted:#5d7079;
+    --line:#e2e8ed;
+    --line2:#cfd9e0;
+    --accent:#0fa9a0;
+    /* functional flow colors (match source diagram) */
+    --c-heat:#e8442f;
+    --c-vapor:#f5b51e;
+    --c-two:#9bd692;
+    --c-press:#1f9d3f;
+    --c-liquid:#2f86e0;
+    --c-liquid2:#74b3f0;
+    --c-refrig:#e08fe0;
+    --node:#ffffff;
+    --node-stroke:#b9c6cf;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 50% -5%, #ffffff 0%, transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:34px 22px;
+  }
+  .panel{
+    width:100%;max-width:1080px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:22px;
+    box-shadow:0 1px 0 #fff inset, 0 24px 60px -34px rgba(20,40,55,.35);
+    overflow:hidden;
+  }
+  .head{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    padding:18px 24px;border-bottom:1px solid var(--line);
+  }
+  .ttl{font-family:'Bricolage Grotesque';font-weight:700;font-size:18px;letter-spacing:-.2px;display:flex;align-items:center;gap:11px}
+  .ttl .dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(15,169,160,.15)}
+  .controls{display:flex;gap:8px}
+  button{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;cursor:pointer;
+    border:1px solid var(--line2);background:#fff;color:var(--ink);
+    padding:8px 13px;border-radius:9px;transition:.16s;
+  }
+  button:hover{border-color:var(--accent);color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+  button.primary:hover{background:#0c8f87;color:#fff}
+
+  .svgwrap{padding:20px 18px 6px}
+  svg.flow{width:100%;height:auto;display:block}
+
+  .node rect,.node polygon{fill:var(--node);stroke:var(--node-stroke);stroke-width:1.6;transition:.3s}
+  .node text{fill:var(--ink);font-family:'IBM Plex Sans';font-size:15px;font-weight:500}
+  .node.active rect,.node.active polygon{stroke:var(--accent);stroke-width:2.6;
+    filter:drop-shadow(0 6px 14px rgba(15,169,160,.28))}
+
+  .pipe{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+  .pipe.dash{stroke-dasharray:13 12;animation:flow 1.05s linear infinite}
+  .paused .pipe.dash{animation-play-state:paused}
+  @keyframes flow{to{stroke-dashoffset:-25}}
+  .pipe.heat{stroke:var(--c-heat)}
+  .pipe.vapor{stroke:var(--c-vapor)}
+  .pipe.two{stroke:var(--c-two)}
+  .pipe.press{stroke:var(--c-press)}
+  .pipe.liquid{stroke:var(--c-liquid)}
+  .pipe.water{stroke:var(--c-liquid2)}
+  .pipe.refrig{stroke:var(--c-refrig)}
+  .pipe.dim{opacity:.14;animation:none}
+  .flbl{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:var(--c-heat);font-weight:500}
+  .legend{display:flex;flex-wrap:wrap;gap:10px 22px;padding:14px 24px 18px;border-top:1px solid var(--line)}
+  .leg{display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)}
+  .leg b{display:inline-block;width:26px;height:4px;border-radius:2px;flex:none}
+
+  .ttl-group{display:flex;flex-direction:column;gap:5px}
+  .ttl-sub{font-size:13px;color:var(--muted);padding-left:22px;max-width:60ch}
+
+  /* step strip — 2-column, reference style */
+  .steps{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid var(--line);background:#f7f6f1}
+  .step{padding:22px 24px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+    cursor:pointer;transition:.18s;display:flex;gap:16px;align-items:flex-start;position:relative}
+  .step:nth-child(2n){border-right:none}
+  .step:nth-last-child(-n+1):nth-child(odd){grid-column:span 2}
+  .step:hover{background:#eeede7}
+  .step.active{background:#eaf7f6}
+  .step .badge{width:28px;height:28px;border-radius:50%;background:#1c2b35;color:#fff;
+    font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;
+    display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px;transition:.2s}
+  .step.active .badge{background:var(--accent)}
+  .step .body{font-size:14.5px;line-height:1.6;color:#2a3a44}
+  .step .body strong{font-weight:700;color:var(--ink)}
+
+  /* legend — small squares, inline */
+  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;padding:13px 24px 15px;
+    border-top:1px solid var(--line);background:#f7f6f1}
+  .leg{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);
+    font-family:'IBM Plex Sans',sans-serif}
+  .leg b{display:inline-block;width:14px;height:14px;border-radius:3px;flex:none}
+
+  @media(max-width:780px){
+    .steps{grid-template-columns:1fr}
+    .step{border-right:none}
+    .step:nth-last-child(-n+1):nth-child(odd){grid-column:span 1}
+  }
+</style>
+</head>
+<body class="paused">
+  <div class="panel">
+    <div class="head">
+      <div class="ttl-group">
+        <div class="ttl"><span class="dot"></span> Synthetic Hydropower Plant — process flow</div>
+        <div class="ttl-sub">Using low temperature heat to compress a liquid that drives a hydroelectric turbine</div>
+      </div>
+      <div class="controls">
+        <button class="primary" id="walk">▸ Walk through</button>
+        <button id="toggle">⏵ Run</button>
+        <button id="reset">↺ Reset</button>
+      </div>
+    </div>
+
+    <div class="svgwrap">
+      <svg class="flow" viewBox="0 0 1280 540" id="flowsvg" role="img" aria-label="Thermohydraulic process flow diagram">
+        <defs>
+          <marker id="h-heat" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="15" refX="15" refY="7.5" orient="auto"><path d="M0,0 L15,7.5 L0,15 Z" fill="var(--c-heat)"/></marker>
+          <marker id="h-vapor" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="15" refX="15" refY="7.5" orient="auto"><path d="M0,0 L15,7.5 L0,15 Z" fill="var(--c-vapor)"/></marker>
+          <marker id="h-two" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="15" refX="15" refY="7.5" orient="auto"><path d="M0,0 L15,7.5 L0,15 Z" fill="var(--c-two)"/></marker>
+          <marker id="h-press" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="15" refX="15" refY="7.5" orient="auto"><path d="M0,0 L15,7.5 L0,15 Z" fill="var(--c-press)"/></marker>
+          <marker id="h-liquid" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="15" refX="15" refY="7.5" orient="auto"><path d="M0,0 L15,7.5 L0,15 Z" fill="var(--c-liquid)"/></marker>
+          <marker id="h-water" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="15" refX="15" refY="7.5" orient="auto"><path d="M0,0 L15,7.5 L0,15 Z" fill="var(--c-liquid2)"/></marker>
+          <marker id="h-refrig" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="15" refX="15" refY="7.5" orient="auto"><path d="M0,0 L15,7.5 L0,15 Z" fill="var(--c-refrig)"/></marker>
+        </defs>
+
+        <!-- pipes -->
+        <path class="pipe heat dash"   data-stage="1" marker-end="url(#h-heat)"   d="M410,52 L410,150"/>
+        <path class="pipe refrig dash" data-stage="5" marker-end="url(#h-refrig)" d="M1172,335 L1245,335 L1245,515 L40,515 L40,175 L320,175"/>
+        <path class="pipe vapor dash"  data-stage="2" marker-end="url(#h-vapor)"  d="M320,210 L130,210 L130,330 L320,330"/>
+        <path class="pipe water dash" data-stage="5" marker-end="url(#h-water)" d="M1159,360 L1212,360 L1212,445 L150,445 L150,362 L320,362"/>
+        <path class="pipe two dash"    data-stage="3" marker-end="url(#h-two)"    d="M500,346 L600,346"/>
+        <path class="pipe press dash"  data-stage="3" marker-end="url(#h-press)"  d="M762,346 L840,346"/>
+        <path class="pipe heat dash"   data-stage="4" marker-end="url(#h-heat)"   d="M920,320 L920,44"/>
+        <path class="pipe liquid dash" data-stage="4" marker-end="url(#h-liquid)" d="M1000,346 L1094,346"/>
+
+        <!-- red arrow labels -->
+        <text class="flbl" x="410" y="38" text-anchor="middle">Waste heat input</text>
+        <text class="flbl" x="920" y="30" text-anchor="middle">Power output</text>
+
+        <!-- nodes -->
+        <g class="node" data-stage="1"><rect x="320" y="150" width="180" height="92" rx="10"/><text x="410" y="201" text-anchor="middle">Evaporator</text></g>
+        <g class="node" data-stage="2"><rect x="320" y="300" width="180" height="92" rx="10"/><text x="410" y="351" text-anchor="middle">Gas injector</text></g>
+        <g class="node" data-stage="3"><polygon points="600,310 762,330 762,362 600,382"/><text x="678" y="351" text-anchor="middle">Diffuser</text></g>
+        <g class="node" data-stage="3"><polygon points="840,330 1000,310 1000,382 840,362"/><text x="920" y="345" text-anchor="middle">Hydroelectric</text><text x="920" y="364" text-anchor="middle">turbine</text></g>
+        <g class="node" data-stage="4"><polygon points="1075,310 1185,310 1130,415"/><text x="1130" y="345" text-anchor="middle">Separator</text></g>
+      </svg>
+    </div>
+
+    <div class="legend">
+      <span class="leg"><b style="background:var(--c-vapor)"></b> High velocity gas</span>
+      <span class="leg"><b style="background:var(--c-liquid2)"></b> Low velocity water</span>
+      <span class="leg"><b style="background:var(--c-two)"></b> High velocity liquid mixture</span>
+      <span class="leg"><b style="background:var(--c-press)"></b> High pressure liquid mixture</span>
+      <span class="leg"><b style="background:var(--c-liquid)"></b> Low pressure liquid mixture</span>
+      <span class="leg"><b style="background:var(--c-heat)"></b> Energy input/output</span>
+      <span class="leg"><b style="background:var(--c-refrig)"></b> Low velocity refrigerant</span>
+    </div>
+
+    <div class="steps" id="steps">
+      <div class="step" data-stage="1"><span class="badge">1</span><div class="body"><strong>Evaporation.</strong> Low exergy thermal energy from a data center cooling unit or power plant flue gas stack is used to vaporize a liquid refrigerant to convert it into a high velocity gas.</div></div>
+      <div class="step" data-stage="2"><span class="badge">2</span><div class="body"><strong>Mixing.</strong> The high velocity refrigerant gas is then injected into a low velocity water stream to increase the kinetic energy of the water by transferring the momentum of the refrigerant to the water through drag forces. This process also condenses the refrigerant.</div></div>
+      <div class="step" data-stage="3"><span class="badge">3</span><div class="body"><strong>Pressurization.</strong> The high velocity refrigerant/water mixture flows into a diffuser where its pressure is increased by decelerating the flow, which converts its kinetic energy into static pressure.</div></div>
+      <div class="step" data-stage="4"><span class="badge">4</span><div class="body"><strong>Power generation.</strong> The high pressure liquid mixture drives a hydroelectric turbine that produces electricity.</div></div>
+      <div class="step" data-stage="5"><span class="badge">5</span><div class="body"><strong>Separation.</strong> The fluid mixture is separated back into water and refrigerant streams. The refrigerant returns to absorb waste heat in the evaporator and the water returns to the injection stream to restart the cycle.</div></div>
+    </div>
+  </div>
+
+<script>
+  const body=document.body, svg=document.getElementById('flowsvg');
+  const pipes=[...svg.querySelectorAll('.pipe')], nodes=[...svg.querySelectorAll('.node')];
+  const steps=[...document.querySelectorAll('.step')];
+  let running=false, walk=false, cur=0, timer=null;
+
+  function highlight(stage){
+    nodes.forEach(n=>n.classList.toggle('active', n.dataset.stage==stage));
+    steps.forEach(s=>s.classList.toggle('active', s.dataset.stage==stage));
+    pipes.forEach(p=>{const on=p.dataset.stage==stage; p.classList.toggle('dim',!on); p.classList.toggle('dash',on);});
+  }
+  function clearHi(){
+    nodes.forEach(n=>n.classList.remove('active'));
+    steps.forEach(s=>s.classList.remove('active'));
+    pipes.forEach(p=>{p.classList.remove('dim');p.classList.add('dash');});
+  }
+  function runAll(on){
+    running=on; walk=false; clearInterval(timer);
+    body.classList.toggle('paused',!on);
+    clearHi();
+    document.getElementById('toggle').textContent=on?'⏸ Pause':'⏵ Run';
+    document.getElementById('walk').textContent='▸ Walk through';
+  }
+  function startWalk(){
+    running=false; walk=true; clearInterval(timer);
+    body.classList.remove('paused');
+    cur=0; highlight(steps[cur].dataset.stage);
+    timer=setInterval(()=>{cur=(cur+1)%steps.length; highlight(steps[cur].dataset.stage);},2600);
+    document.getElementById('toggle').textContent='⏵ Run';
+    document.getElementById('walk').textContent='⏸ Pause walk';
+  }
+  function reset(){
+    running=false;walk=false;clearInterval(timer);
+    body.classList.add('paused'); clearHi();
+    document.getElementById('toggle').textContent='⏵ Run';
+    document.getElementById('walk').textContent='▸ Walk through';
+  }
+  document.getElementById('toggle').addEventListener('click',()=>running?reset():runAll(true));
+  document.getElementById('walk').addEventListener('click',()=>{
+    if(walk){clearInterval(timer);walk=false;body.classList.add('paused');document.getElementById('walk').textContent='▸ Resume walk';}
+    else startWalk();
+  });
+  document.getElementById('reset').addEventListener('click',reset);
+  steps.forEach(s=>s.addEventListener('click',()=>{clearInterval(timer);walk=true;running=false;body.classList.remove('paused');
+    cur=steps.indexOf(s); highlight(s.dataset.stage); document.getElementById('walk').textContent='▸ Resume walk';}));
+
+  // auto-run on load
+  window.addEventListener('load',()=>runAll(true));
+</script>
+</body>
+</html>
