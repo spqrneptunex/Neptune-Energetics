@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neptune Energetics — Interactive Technology Overview</title>
+<style>
+  :root {
+    --bg: #EDEEF0;
+    --panel: #FFFFFF;
+    --ink: #10161D;
+    --ink-soft: #4A5560;
+    --line: #D8DBDE;
+    --navy: #0D1B2A;
+    --energy: #FF6B35;
+    --energy-dim: #FFD9C4;
+    --info: #2E7D8C;
+    --info-dim: #C5DEE2;
+    --turbine: #2EC4B6;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Archivo", "Arial Narrow", -apple-system, "Segoe UI", sans-serif;
+  }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; }
+
+  .eyebrow-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    background: #fff;
+    border: 1px solid var(--line);
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  .eyebrow-tag .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--energy);
+  }
+
+  .topstrip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 40px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line);
+    background: #fff;
+  }
+  .topstrip strong { color: var(--navy); }
+
+  .wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 56px 40px 90px 40px;
+  }
+
+  .hero h1 {
+    font-family: "Archivo", "Arial Narrow", sans-serif;
+    font-weight: 800;
+    font-size: 56px;
+    line-height: 1.04;
+    letter-spacing: -1px;
+    margin: 22px 0 20px 0;
+    color: var(--navy);
+    max-width: 15ch;
+  }
+  .hero p.lede {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0 0 26px 0;
+  }
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 54px;
+  }
+  .chip {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--navy);
+    background: #fff;
+    border: 1px solid var(--line);
+    padding: 8px 16px;
+    border-radius: 999px;
+  }
+
+  /* ===== Simulation stage ===== */
+  .stage-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 28px 28px 12px 28px;
+    margin-bottom: 22px;
+  }
+  .stage-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .stage-head h2 { font-size: 22px; margin: 0; color: var(--navy); }
+  .stage-head .legend {
+    display: flex;
+    gap: 18px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+  .legend .i-energy { background: var(--energy); }
+  .legend .i-info { background: var(--info); }
+
+  .stage-sub { font-size: 14px; color: var(--ink-soft); margin: 0 0 18px 0; }
+
+  #simSvgHost { width: 100%; }
+
+  /* controls */
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    padding: 18px 4px 22px 4px;
+    border-top: 1px solid var(--line);
+    margin-top: 6px;
+  }
+  .control {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .control .row1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .control .fname {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--navy);
+  }
+  .control .fval {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--energy);
+    font-variant-numeric: tabular-nums;
+  }
+  .control input[type=range] {
+    width: 100%;
+    accent-color: var(--energy);
+  }
+  .control .sub {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dispatch-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 4px 22px 4px;
+  }
+  .dispatch-toggle .label {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .switch-group {
+    display: inline-flex;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .switch-opt {
+    border: none;
+    background: transparent;
+    padding: 7px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .switch-opt.active {
+    background: var(--navy);
+    color: #fff;
+  }
+  .dispatch-note {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  /* ===== Architecture accordion ===== */
+  .arch-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 26px 8px 26px;
+    margin-bottom: 22px;
+  }
+  .arch-head { display:flex; justify-content: space-between; align-items:center; margin-bottom: 4px;}
+  .arch-head h2 { font-size: 22px; margin:0; color: var(--navy); }
+  .arch-head .hint {
+    font-size: 12.5px; font-weight: 700; color: var(--navy);
+    background: var(--energy-dim); padding: 6px 12px; border-radius: 999px;
+  }
+  .arch-sub { font-size: 14px; color: var(--ink-soft); margin: 0 0 18px 0; }
+
+  .arch-row {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .arch-row.active { border-color: var(--energy); }
+  .arch-row-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .arch-num {
+    flex: 0 0 auto;
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--navy);
+  }
+  .arch-row.active .arch-num { background: var(--energy); color: #fff; }
+  .arch-titles { flex: 1 1 auto; }
+  .arch-titles .t { font-weight: 700; font-size: 15.5px; color: var(--navy); margin-bottom: 2px; }
+  .arch-titles .d { font-size: 13.3px; color: var(--ink-soft); }
+  .arch-chevron {
+    flex: 0 0 auto;
+    color: var(--ink-soft);
+    font-size: 18px;
+    transition: transform 0.2s ease;
+  }
+  .arch-row.active .arch-chevron { transform: rotate(90deg); color: var(--energy); }
+  .arch-detail {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+    background: var(--bg);
+  }
+  .arch-row.active .arch-detail { max-height: 200px; }
+  .arch-detail-inner {
+    padding: 4px 18px 18px 68px;
+    font-size: 13.8px;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
+  /* ===== cross-cutting / bottom two-col ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  .info-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px 26px;
+  }
+  .info-card h3 { font-size: 18px; margin: 0 0 14px 0; color: var(--navy); }
+  .info-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+  }
+  .info-item:first-of-type { border-top: none; padding-top: 0; }
+  .info-item .mark {
+    flex: 0 0 auto;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: #E4F5F1;
+    color: var(--turbine);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 12px;
+    margin-top: 1px;
+  }
+  .info-item .t { font-weight: 700; font-size: 14.5px; color: var(--navy); margin-bottom: 3px; }
+  .info-item .d { font-size: 13.3px; color: var(--ink-soft); line-height: 1.5; }
+
+  .footnote {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .live-dot {
+    display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--navy);
+  }
+  .live-dot .d { width: 7px; height: 7px; border-radius: 50%; background: #3AC17C; }
+
+  @media (max-width: 860px) {
+    .hero h1 { font-size: 38px; }
+    .controls { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+    .stage-panel { padding: 22px 16px 12px 16px; }
+    #simSvgHost { overflow-x: auto; }
+    #simSvgHost svg { min-width: 640px; }
+    .dispatch-toggle { flex-wrap: wrap; }
+    .dispatch-note { flex-basis: 100%; order: 3; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topstrip">
+  <strong>Neptune Energetics</strong>
+  <span>Interactive Technology Overview</span>
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <span class="eyebrow-tag"><span class="dot"></span> INTERACTIVE PLATFORM WALKTHROUGH</span>
+    <h1>From wasted heat to dispatched power.</h1>
+    <p class="lede">Neptune Energetics installs waste heat power plants on site at data centers, thermal power plants, manufacturing plants, and refineries. An agentic control system reads the grid and the facility in real time, then decides — for every kilowatt — whether to offset consumption or sell to the grid.</p>
+    <div class="chip-row">
+      <span class="chip">Zero CapEx install</span>
+      <span class="chip">Hydro turbine, not steam</span>
+      <span class="chip">Agentic dispatch</span>
+      <span class="chip">Revenue-share model</span>
+    </div>
+  </div>
+
+  <!-- SIMULATION STAGE -->
+  <div class="stage-panel">
+    <div class="stage-head">
+      <h2>Live facility simulation</h2>
+      <div class="legend">
+        <span><i class="i-energy"></i> Energy</span>
+        <span><i class="i-info"></i> Information</span>
+      </div>
+    </div>
+    <p class="stage-sub">Adjust waste heat available at each site and watch the plant convert it to electricity, then dispatch it.</p>
+
+    <div id="simSvgHost"></div>
+
+    <div class="controls" id="controlsHost"></div>
+
+    <div class="dispatch-toggle">
+      <span class="label">Grid price signal</span>
+      <div class="switch-group" id="priceSwitch">
+        <button class="switch-opt" data-price="low">Low</button>
+        <button class="switch-opt active" data-price="mid">Normal</button>
+        <button class="switch-opt" data-price="high">High</button>
+      </div>
+      <span class="dispatch-note" id="dispatchNote">At normal grid prices, the agent splits output between onsite offset and grid sale.</span>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE ACCORDION -->
+  <div class="arch-panel">
+    <div class="arch-head">
+      <h2>System architecture</h2>
+      <span class="hint">Click any stage</span>
+    </div>
+    <p class="arch-sub">Five stages, from heat capture to a payment landing in your account.</p>
+    <div id="archHost"></div>
+  </div>
+
+  <!-- CROSS-CUTTING -->
+  <div class="two-col">
+    <div class="info-card">
+      <h3>Cross-cutting controls</h3>
+      <div class="info-item">
+        <div class="mark">&#10003;</div>
+        <div><div class="t">Static hardware core</div><div class="d">Evaporation, mixing, and pressurization happen in fixed geometry — the turbine is the only moving part. This design enhances modularity, which reduces manufacturing and maintenance costs.</div></div>
+      </div>
+      <div class="info-item">
+        <div class="mark">&#10003;</div>
+        <div><div class="t">Safety interlocks</div><div class="d">Pressure and temperature limits are enforced in hardware, independent of the dispatch agent.</div></div>
+      </div>
+      <div class="info-item">
+        <div class="mark">&#10003;</div>
+        <div><div class="t">Telemetry audit trail</div><div class="d">Every dispatch decision and payment is logged and traceable back to a grid-price snapshot.</div></div>
+      </div>
+    </div>
+    <div class="info-card">
+      <h3>Facility experience</h3>
+      <div class="info-item">
+        <div class="mark">1</div>
+        <div><div class="t">Install</div><div class="d">Neptune Energetics installs the unit on site at no upfront cost to the facility.</div></div>
+      </div>
+      <div class="info-item">
+        <div class="mark">2</div>
+        <div><div class="t">Recovery</div><div class="d">Waste heat that would otherwise be rejected drives the hydro turbine continuously.</div></div>
+      </div>
+      <div class="info-item">
+        <div class="mark">3</div>
+        <div><div class="t">Monetization</div><div class="d">The customer converts their previously wasted heat into profits through energy savings or grid sales.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <span>Neptune Energetics is a waste heat power plant developer, currently at TRL 3. Figures shown are illustrative of the modeled cycle, not live production data.</span>
+    <span class="live-dot"><span class="d"></span> Simulation running</span>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- CONFIG: three facilities ----------
+  var FACILITIES = [
+    {
+      id: "dc",
+      name: "Data Center",
+      sub: "Coolant loop heat",
+      x: 30,
+      maxHeat: 5000,     // kW available heat
+      defaultHeat: 3200,
+      color: "#5B6EE1"
+    },
+    {
+      id: "pp",
+      name: "Thermal Power Plant",
+      sub: "Flue gas & cooling stack",
+      x: 420,
+      maxHeat: 9000,
+      defaultHeat: 6000,
+      color: "#C0722D"
+    },
+    {
+      id: "rf",
+      name: "Refinery",
+      sub: "Process return water",
+      x: 780,
+      maxHeat: 7000,
+      defaultHeat: 4200,
+      color: "#3F8F6B"
+    }
+  ];
+
+  var EFFICIENCY = 0.33; // overall thermal-to-electric efficiency, matches modeled cycle
+  var SVG_W = 1200, SVG_H = 430;
+  var state = {
+    heat: {},          // facility id -> kW heat input
+    price: "mid"        // low | mid | high
+  };
+  FACILITIES.forEach(function (f) { state.heat[f.id] = f.defaultHeat; });
+
+  // ---------- Build SVG scene ----------
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  var svg = svgEl("svg", {
+    viewBox: "0 0 " + SVG_W + " " + SVG_H,
+    width: "100%",
+    style: "display:block; max-height:430px; height:auto;"
+  });
+
+  var defs = svgEl("defs", {});
+  // soft shadow filter
+  var filt = svgEl("filter", { id: "softShadow", x: "-20%", y: "-20%", width: "140%", height: "140%" });
+  filt.appendChild(svgEl("feDropShadow", { dx: 0, dy: 2, stdDeviation: 3, "flood-color": "#0D1B2A", "flood-opacity": 0.12 }));
+  defs.appendChild(filt);
+  svg.appendChild(defs);
+
+  // ground line
+  svg.appendChild(svgEl("line", { x1: 10, y1: 360, x2: SVG_W - 10, y2: 360, stroke: "#D8DBDE", "stroke-width": 2 }));
+
+  // grid + payments hub (right side, above ground, floating)
+  var hubX = SVG_W / 2, hubY = 60;
+  var hubGroup = svgEl("g", {});
+  hubGroup.appendChild(svgEl("rect", { x: hubX - 62, y: hubY - 40, width: 124, height: 80, rx: 12, fill: "#0D1B2A", filter: "url(#softShadow)" }));
+  var hubIcon = svgEl("text", { x: hubX, y: hubY - 8, "text-anchor": "middle", "font-size": 22, fill: "#fff" });
+  hubIcon.textContent = "\u26A1";
+  hubGroup.appendChild(hubIcon);
+  var hubLabel1 = svgEl("text", { x: hubX, y: hubY + 16, "text-anchor": "middle", "font-size": 12.5, "font-weight": 700, fill: "#fff" });
+  hubLabel1.textContent = "Grid + Market";
+  hubGroup.appendChild(hubLabel1);
+  var hubLabel2 = svgEl("text", { x: hubX, y: hubY + 31, "text-anchor": "middle", "font-size": 10.5, fill: "#B7C4CE" });
+  hubLabel2.textContent = "price signal";
+  hubGroup.appendChild(hubLabel2);
+  svg.appendChild(hubGroup);
+
+  function buildFacility(f) {
+    var g = svgEl("g", { id: "fac-" + f.id });
+    var baseX = f.x;
+
+    // building silhouette
+    var bW = 140, bH = 130, bY = 360 - bH;
+    g.appendChild(svgEl("rect", {
+      x: baseX, y: bY, width: bW, height: bH, rx: 6,
+      fill: "#fff", stroke: "#D8DBDE", "stroke-width": 1.5, filter: "url(#softShadow)"
+    }));
+    // roof accent bar
+    g.appendChild(svgEl("rect", { x: baseX, y: bY, width: bW, height: 8, rx: 4, fill: f.color }));
+    // windows grid
+    for (var r = 0; r < 3; r++) {
+      for (var c = 0; c < 4; c++) {
+        g.appendChild(svgEl("rect", {
+          x: baseX + 14 + c * 32, y: bY + 26 + r * 30, width: 20, height: 18, rx: 2,
+          fill: "#EDEEF0"
+        }));
+      }
+    }
+    // facility label
+    var lbl = svgEl("text", { x: baseX + bW / 2, y: bY - 14, "text-anchor": "middle", "font-size": 14.5, "font-weight": 800, fill: "#0D1B2A" });
+    lbl.textContent = f.name;
+    g.appendChild(lbl);
+    var lbl2 = svgEl("text", { x: baseX + bW / 2, y: bY - 1, "text-anchor": "middle", "font-size": 11, fill: "#4A5560" });
+    lbl2.textContent = f.sub;
+    g.appendChild(lbl2);
+
+    // Neptune unit (small container) beside building
+    var uX = baseX + bW + 26, uW = 92, uH = 54, uY = 360 - uH;
+    g.appendChild(svgEl("rect", {
+      x: uX, y: uY, width: uW, height: uH, rx: 5,
+      fill: "#0D1B2A", filter: "url(#softShadow)"
+    }));
+    for (var i = 1; i < 5; i++) {
+      g.appendChild(svgEl("line", { x1: uX + i * (uW / 5), y1: uY, x2: uX + i * (uW / 5), y2: uY + uH, stroke: "#24384A", "stroke-width": 1 }));
+    }
+    var uLbl = svgEl("text", { x: uX + uW / 2, y: uY + uH / 2 - 1, "text-anchor": "middle", "font-size": 8.6, "font-weight": 700, fill: "#fff", "letter-spacing": "0.3" });
+    uLbl.textContent = "NEPTUNE";
+    g.appendChild(uLbl);
+    var uLbl1b = svgEl("text", { x: uX + uW / 2, y: uY + uH / 2 + 11, "text-anchor": "middle", "font-size": 8.6, "font-weight": 700, fill: "#fff", "letter-spacing": "0.3" });
+    uLbl1b.textContent = "ENERGETICS";
+    g.appendChild(uLbl1b);
+    var uLbl2 = svgEl("text", { x: uX + uW / 2, y: uY - 10, "text-anchor": "middle", "font-size": 10, fill: "#8A94A0", "font-weight": 700 });
+    uLbl2.textContent = "HEAT RECOVERY UNIT";
+    g.appendChild(uLbl2);
+
+    // path anchor points, stored on facility object
+    f._svg = {
+      heatStart: { x: baseX + bW - 6, y: uY + uH / 2 },
+      heatEnd: { x: uX + 4, y: uY + uH / 2 },
+      powerStart: { x: uX + uW, y: uY + uH / 2 },
+      groupX: baseX
+    };
+    return g;
+  }
+
+  var facilityAnchors = {};
+  FACILITIES.forEach(function (f) {
+    var g = buildFacility(f);
+    svg.appendChild(g);
+    facilityAnchors[f.id] = f._svg;
+  });
+
+  // Power output lines: from each unit's power port, curving to hub AND back down to a "facility offset" point.
+  // Offset target: back into the building's base (self-use). Sale target: up to the grid hub.
+  var flowLayer = svgEl("g", { id: "flowLayer" });
+  svg.appendChild(flowLayer);
+
+  var paths = {}; // id -> {heat: pathEl, offset: pathEl, sale: pathEl, info: pathEl}
+
+  FACILITIES.forEach(function (f) {
+    var a = facilityAnchors[f.id];
+    var p = {};
+
+    // heat capture path (short, building -> unit)
+    var heatPath = svgEl("path", {
+      d: "M " + a.heatStart.x + " " + a.heatStart.y + " L " + a.heatEnd.x + " " + a.heatEnd.y,
+      fill: "none", stroke: "#FFD9C4", "stroke-width": 6, "stroke-linecap": "round"
+    });
+    flowLayer.appendChild(heatPath);
+    p.heatTrack = heatPath;
+
+    // offset path: from power port, short loop down and directly back into the unit's own base (self-consumption)
+    var offX0 = a.powerStart.x, offY0 = a.powerStart.y;
+    var loopBottomY = 396;
+    var offPathD = "M " + offX0 + " " + offY0 +
+      " C " + (offX0 + 22) + " " + (offY0 + 20) + ", " + (offX0 + 18) + " " + loopBottomY + ", " + (offX0 - 20) + " " + loopBottomY +
+      " C " + (offX0 - 55) + " " + loopBottomY + ", " + (offX0 - 55) + " " + (offY0 + 20) + ", " + (a.heatEnd.x + 8) + " " + (offY0 + 4);
+    var offsetTrack = svgEl("path", { d: offPathD, fill: "none", stroke: "#FFD9C4", "stroke-width": 5, "stroke-linecap": "round" });
+    flowLayer.appendChild(offsetTrack);
+    p.offsetTrack = offsetTrack;
+    p.offsetD = offPathD;
+
+    // sale path: from power port, smooth arc up to the centered hub. Direction bends according to
+    // which side of the hub this facility sits on, so left and right facilities mirror cleanly.
+    // The middle facility gets a small fixed bias (0.35) rather than 0, so its two lines still
+    // separate instead of collapsing into the same vertical track.
+    var facilityCenterX = a.powerStart.x;
+    var side = facilityCenterX < hubX - 20 ? -1 : (facilityCenterX > hubX + 20 ? 1 : 0.35);
+    var hubEntryX = hubX + side * 34;
+    var hubEntryY = hubY + 44;
+    var saleD = "M " + offX0 + " " + (offY0 - 6) +
+      " C " + (offX0 + side * 30) + " " + (offY0 - 100) + ", " + (hubEntryX - side * 70) + " " + (hubY + 110) + ", " + hubEntryX + " " + hubEntryY;
+    var saleTrack = svgEl("path", { d: saleD, fill: "none", stroke: "#FFD9C4", "stroke-width": 5, "stroke-linecap": "round" });
+    flowLayer.appendChild(saleTrack);
+    p.saleTrack = saleTrack;
+    p.saleD = saleD;
+
+    // info path: thin dotted line from hub down to unit (price signal in), teal — routed on the opposite
+    // side of the hub entry from the sale line so the two never run parallel or cross.
+    var infoEntryX = hubX - side * 34;
+    var infoD = "M " + infoEntryX + " " + (hubY + 44) +
+      " C " + (infoEntryX - side * 110) + " " + (hubY + 40) + ", " + (offX0 - side * 100) + " " + (offY0 - 60) + ", " + (offX0 + 8) + " " + (offY0 - 26);
+    var infoTrack = svgEl("path", { d: infoD, fill: "none", stroke: "#C5DEE2", "stroke-width": 3, "stroke-dasharray": "1 7", "stroke-linecap": "round" });
+    flowLayer.appendChild(infoTrack);
+    p.infoTrack = infoTrack;
+    p.infoD = infoD;
+
+    paths[f.id] = p;
+  });
+
+  document.getElementById("simSvgHost").appendChild(svg);
+
+  // ---------- Particle animation engine ----------
+  // Each flow type gets particles emitted along a path at a rate proportional to its "activity" level.
+  var particleLayer = flowLayer; // particles drawn above tracks since appended after
+  var particles = []; // {el, path, len, t, speed, color, r}
+
+  function makeParticle(pathEl, color, r) {
+    var c = svgEl("circle", { r: r, fill: color });
+    particleLayer.appendChild(c);
+    return {
+      el: c,
+      path: pathEl,
+      len: pathEl.getTotalLength(),
+      t: Math.random(),
+      speed: 0,
+      color: color
+    };
+  }
+
+  // Pools of particles per facility per lane, count/speed driven by state
+  var pools = {};
+  FACILITIES.forEach(function (f) {
+    pools[f.id] = {
+      heat: [],
+      offset: [],
+      sale: [],
+      info: []
+    };
+    for (var i = 0; i < 6; i++) pools[f.id].heat.push(makeParticle(paths[f.id].heatTrack, "#FF6B35", 3.4));
+    for (var i2 = 0; i2 < 8; i2++) pools[f.id].offset.push(makeParticle(paths[f.id].offsetTrack, "#FF6B35", 3.2));
+    for (var i3 = 0; i3 < 8; i3++) pools[f.id].sale.push(makeParticle(paths[f.id].saleTrack, "#FF6B35", 3.2));
+    for (var i5 = 0; i5 < 3; i5++) pools[f.id].info.push(makeParticle(paths[f.id].infoTrack, "#2E7D8C", 2.6));
+  });
+
+  function priceMultiplier() {
+    if (state.price === "low") return { saleShare: 0.15 };
+    if (state.price === "high") return { saleShare: 0.8 };
+    return { saleShare: 0.45 };
+  }
+
+  function computeOutputs() {
+    var out = {};
+    FACILITIES.forEach(function (f) {
+      var heatKw = state.heat[f.id];
+      var elecKw = heatKw * EFFICIENCY;
+      out[f.id] = { heatKw: heatKw, elecKw: elecKw };
+    });
+    return out;
+  }
+
+  var lastTs = null;
+  function tick(ts) {
+    if (lastTs === null) lastTs = ts;
+    var dt = Math.min(50, ts - lastTs) / 1000;
+    lastTs = ts;
+
+    var outputs = computeOutputs();
+    var pm = priceMultiplier();
+
+    FACILITIES.forEach(function (f) {
+      var o = outputs[f.id];
+      var heatFrac = o.heatKw / f.maxHeat;              // 0..1
+      var elecActivity = Math.max(0.08, heatFrac);       // never fully stop
+      var saleShare = pm.saleShare;
+      var offsetShare = 1 - saleShare;
+
+      var speedHeat = 0.55 + heatFrac * 1.7;
+      var speedPower = 0.5 + elecActivity * 1.6;
+      var speedInfo = 0.9;
+
+      animatePool(pools[f.id].heat, dt, speedHeat, heatFrac > 0.03);
+      animatePool(pools[f.id].offset, dt, speedPower, offsetShare > 0.08 && elecActivity > 0.05, offsetShare);
+      animatePool(pools[f.id].sale, dt, speedPower, saleShare > 0.08 && elecActivity > 0.05, saleShare);
+      animatePool(pools[f.id].info, dt, speedInfo, true);
+    });
+
+    requestAnimationFrame(tick);
+  }
+
+  function animatePool(pool, dt, speed, active, activeFraction) {
+    var showCount = pool.length;
+    if (typeof activeFraction === "number") {
+      showCount = Math.max(1, Math.round(pool.length * Math.min(1, Math.max(0.12, activeFraction))));
+    }
+    pool.forEach(function (p, idx) {
+      if (!active) {
+        p.el.setAttribute("opacity", "0");
+        return;
+      }
+      var visible = idx < showCount;
+      p.t += (dt * speed) / 3.2;
+      if (p.t > 1) p.t -= 1;
+      var pt = p.path.getPointAtLength(p.t * p.len);
+      p.el.setAttribute("cx", pt.x);
+      p.el.setAttribute("cy", pt.y);
+      p.el.setAttribute("opacity", visible ? "0.95" : "0");
+    });
+  }
+
+  requestAnimationFrame(tick);
+
+  // ---------- Controls: sliders ----------
+  var controlsHost = document.getElementById("controlsHost");
+  FACILITIES.forEach(function (f) {
+    var wrap = document.createElement("div");
+    wrap.className = "control";
+    wrap.innerHTML =
+      '<div class="row1"><span class="fname">' + f.name + '</span><span class="fval" id="val-' + f.id + '"></span></div>' +
+      '<input type="range" min="0" max="' + f.maxHeat + '" step="50" value="' + f.defaultHeat + '" id="slider-' + f.id + '">' +
+      '<div class="sub"><span id="elec-' + f.id + '"></span></div>';
+    controlsHost.appendChild(wrap);
+  });
+
+  function refreshReadouts() {
+    FACILITIES.forEach(function (f) {
+      var heatKw = state.heat[f.id];
+      var elecKw = heatKw * EFFICIENCY;
+      document.getElementById("val-" + f.id).textContent = Math.round(heatKw).toLocaleString() + " kW waste heat output";
+      document.getElementById("elec-" + f.id).textContent = Math.round(elecKw).toLocaleString() + " kW electricity output";
+    });
+  }
+  refreshReadouts();
+
+  FACILITIES.forEach(function (f) {
+    var slider = document.getElementById("slider-" + f.id);
+    slider.addEventListener("input", function () {
+      state.heat[f.id] = parseFloat(slider.value);
+      refreshReadouts();
+    });
+  });
+
+  // ---------- Price switch ----------
+  var priceButtons = document.querySelectorAll("#priceSwitch .switch-opt");
+  var priceNoteEl = document.getElementById("dispatchNote");
+  var priceNotes = {
+    low: "At low grid prices, the agent keeps most output on site to offset the facility's own consumption.",
+    mid: "At normal grid prices, the agent splits output between onsite offset and grid sale.",
+    high: "At high grid prices, the agent sells most output back to the grid for a profit."
+  };
+  Array.prototype.forEach.call(priceButtons, function (btn) {
+    btn.addEventListener("click", function () {
+      Array.prototype.forEach.call(priceButtons, function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      state.price = btn.getAttribute("data-price");
+      priceNoteEl.textContent = priceNotes[state.price];
+    });
+  });
+
+  // ---------- Architecture accordion ----------
+  var ARCH = [
+    {
+      t: "Waste Heat Capture",
+      d: "Data center coolant loops, power plant and refinery flue gas, and manufacturing process heat.",
+      detail: "Heat is drawn directly from existing cooling loops, flue-gas ducts, or return water lines — no change to the facility's own process. Our heat recovery systems capture thermal energy from sources as low as 60\u00B0C, existing steam recovery systems only operate above 200\u00B0C."
+    },
+    {
+      t: "Evaporator + Injector",
+      d: "Low-temperature heat vaporizes a refrigerant, which transfers momentum into a water stream.",
+      detail: "Low exergy thermal energy from a data center cooling unit or power plant flue gas stack is used to vaporize a liquid refrigerant to convert it into a high velocity gas. The high velocity refrigerant gas is then injected into a low velocity water stream where momentum transfer and condensation shocks increase the pressure and kinetic energy of the water stream."
+    },
+    {
+      t: "Hydroelectric Turbine",
+      d: "Pressurized water drives an off-the-shelf hydro turbine — the only rotating part.",
+      detail: "A diffuser recovers the water's kinetic energy as static pressure, then a standard hydro turbine converts it to electricity. Static geometry everywhere except this one rotating assembly keeps the hardware simple and low-cost."
+    },
+    {
+      t: "Agentic Control System",
+      d: "Reads live grid pricing and the facility's own consumption in real time.",
+      detail: "The control agent continuously polls grid electricity prices and the facility's current power draw. It weighs the value of offsetting consumption against selling to the grid and recomputes the optimal split, kilowatt by kilowatt."
+    },
+    {
+      t: "Dispatch + Settlement",
+      d: "Routes power automatically, then settles revenue share with the facility.",
+      detail: "Once the agent decides a pathway, power is dispatched with no operator input. Savings or grid revenue are logged, and Neptune's share is settled automatically against the facility's share — the basis of the zero-CapEx model."
+    }
+  ];
+
+  var archHost = document.getElementById("archHost");
+  ARCH.forEach(function (item, idx) {
+    var row = document.createElement("div");
+    row.className = "arch-row" + (idx === 0 ? " active" : "");
+    row.innerHTML =
+      '<div class="arch-row-head">' +
+        '<div class="arch-num">' + (idx + 1) + '</div>' +
+        '<div class="arch-titles"><div class="t">' + item.t + '</div><div class="d">' + item.d + '</div></div>' +
+        '<div class="arch-chevron">&#8250;</div>' +
+      '</div>' +
+      '<div class="arch-detail"><div class="arch-detail-inner">' + item.detail + '</div></div>';
+    row.querySelector(".arch-row-head").addEventListener("click", function () {
+      var wasActive = row.classList.contains("active");
+      Array.prototype.forEach.call(archHost.querySelectorAll(".arch-row"), function (r) { r.classList.remove("active"); });
+      if (!wasActive) row.classList.add("active");
+    });
+    archHost.appendChild(row);
+  });
+
+})();
+</script>
+
+</body>
+</html>
